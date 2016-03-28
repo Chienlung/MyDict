@@ -329,34 +329,40 @@ main(int argc, char *argv[]) {
        } while (1);
        system("cd && clear");
 #else
-    TernNode *dict;
+       TernNode *dict;
 
-    struct timeval start, end;
-    gettimeofday(&start, NULL);
-    dict = createDict();
-    gettimeofday(&end, NULL);
+       struct timeval start, end;
+       gettimeofday(&start, NULL);
+       dict = createDict();
+       gettimeofday(&end, NULL);
 
-    printf("******createDict successfully*****\n");
-    printf("*****建立词典耗时 %.4f s.*****\n", 1.0 * (1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)) / 1000000);	
-    printf("*****Input --quit for quiting.*****\n");
-    do {
-        printf(">>>>>>>");
-        scanf("%s", query);
-        if (TestAndTolower(query) == 0) {
-            printf("Invalid input");
-            continue;
-        }
-        if(!strcmp("--quit", query))
-            break;
-        TernNode *node = queryDict(dict, query);
-        if(node && node->data){
-            printf("%s\n", node->data);
-        } else {
-            printf("\n");
-        }
-    } while (1);
-    system("cd && clear");
+       printf("\033[1;34;40m");
+
+       printf("******createDict successfully*****\n");
+       printf("*****建立词典耗时 %.4f s.*****\n", 1.0 * (1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)) / 1000000);	
+       printf("*****Input --quit for quiting.*****\n");
+       do {
+       printf("\033[1;34;40m");
+           printf(">>>>>>>");
+           printf("\033[1;32;40m");
+           scanf("%s", query);
+           if (TestAndTolower(query) == 0) {
+               printf("Invalid input");
+               continue;
+           }
+           if(!strcmp("--quit", query))
+               break;
+           TernNode *node = queryDict(dict, query);
+           printf("\033[1;31;40m");
+           if(node && node->data){
+               printf("%s\n", node->data);
+           } else {
+               printf("\n");
+           }
+       } while (1);
+       printf("\033[0m");
+       system("cd && clear");
 #endif
 
-    return 0;
+       return 0;
 }
