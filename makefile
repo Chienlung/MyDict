@@ -1,9 +1,6 @@
-MyDict : MyDict.o
-	gcc -o MyDict MyDict.o
-
-MyDict.o : MyDict.c 
-	gcc -c MyDict.c 
+MyDict : 
+	gcc MyDict.c -o MyDict.o -O0 -g
 
 clean:
-	rm  MyDict.o
+	rm  MyDict *~ -rf
 

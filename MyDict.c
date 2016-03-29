@@ -6,6 +6,9 @@
  * use the ascii set
  */
 #define R 128
+//#define DEBUG
+
+#define TERN
 
 /*
  * Node definition of the diction tree
@@ -14,6 +17,12 @@ typedef struct TrieNode {
 	struct TrieNode *child[R];//each node has R childs
 	char *inter;//save the word's interpretation
 } TrieNode;
+
+typedef struct TernNode {
+    struct TernNode *child, *lchild, * rchild;
+    char key;
+    void *data;
+} TernNode;
 
 /*
  * Insert a word and it's interpretation into the diction tree。
@@ -174,29 +183,186 @@ TestAndTolower(char *word) {
 	}
 	return 1;
 }
+
+
+TernNode *newNode(char val){
+    TernNode *node = (TernNode *)calloc(1, sizeof(TernNode));
+    if (!node) {
+        fprintf(stderr, "ERROR: calloc new TernNode \n");
+        exit(1);
+    }
+    node->child = node->lchild = node->rchild = NULL;
+    node->data = NULL;
+    node->key = val;
+    return node;
+}
+
+
+void insertDict(TernNode **root, char *word, char *data){
+
+    if(!word || !data){
+        fprintf(stderr, "ERROR: word or data == NULL in %s\n", __FUNCTION__);
+        exit(1);
+    }
+
+    TernNode *node = *root;
+    int len = strlen(word);
+
+    if(node == NULL) {
+
+        *root = node = newNode(*word);
+
+        if(len == 1) {
+            len = strlen(data) + 1;
+            node->data = malloc(len);
+            memcpy(node->data, data, len);
+
+        } else if(len > 1){
+
+            return insertDict(&(node->child), word+1, data);
+
+        } else {
+
+            fprintf(stderr, "ERROR: word parsing error in %s\n", __FUNCTION__);
+            exit(1);
+        }
+    } else {
+
+        if (node->key == *word){
+
+            return insertDict(&(node->child), word+1, data);
+
+        } else if (node->key > *word) {
+
+            return insertDict(&(node->lchild), word, data);
+
+        } else if (node->key < *word) {
+
+            return insertDict(&(node->rchild), word, data);
+
+        }
+    }
+}
+
+TernNode *createDict() {
+    FILE *fp = NULL;
+    char word[300], inter[300];
+    size_t wordNumber = 0;
+    /*
+     * 打开同一个目录下的原始文件。
+     */
+#ifdef DEBUG
+    fp = fopen("raw-dict_debug", "r");
+#else
+    fp = fopen("raw-dict", "r");
+#endif
+    if (!fp) {
+        fprintf(stderr, "FATAL ERROR: raw-dict not exist\n");
+        exit(1);
+    }
+
+    TernNode *root = NULL;
+    /*
+     * 读取原始文件，单词放到word数组中，对应的中文意思放到inter数组中。
+     */
+    while (fgets(word, sizeof(word), fp) && fgets(inter, sizeof(word), fp)) {
+
+        /*
+         * 插入到字典中。
+         */
+        word[strlen(word) - 1] = '\0';
+        inter[strlen(inter) - 1] = '\0';
+#ifdef DEBUG
+        printf("%s	%s\n", word, inter);
+#endif
+        wordNumber++;
+        insertDict(&root, word, inter);
+    }
+    fclose(fp);
+    printf("*****Total number of words is %u.*****\n", wordNumber);
+    return root;
+
+}
+
+TernNode *queryDict(TernNode *root, char *word) {
+    if(!root || !word){
+        return NULL;
+    }
+
+    if(root->key == *word){
+        int len = strlen(word);
+        if(len == 1) 
+            return root;
+        else
+            return queryDict(root->child, word+1);
+    } else if (root->key < *word) {
+        return queryDict(root->rchild, word);
+    } else {
+        return queryDict(root->lchild, word);
+    }
+
+}
+
 int
 main(int argc, char *argv[]) {
-	char query[200];
-	TrieNode *dict;
+    char query[200];
+#ifndef TERN
+       TrieNode *dict;
 
-	struct timeval start, end;
-	gettimeofday(&start, NULL);
-	dict = CreateDict();
-	gettimeofday(&end, NULL);
+       struct timeval start, end;
+       gettimeofday(&start, NULL);
+       dict = CreateDict();
+       gettimeofday(&end, NULL);
 
-	printf("*****建立词典耗时 %.4f s.*****\n", 1.0 * (1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)) / 1000000);	
-	printf("*****Input --quit for quiting.*****\n");
-	do {
-		printf(">>>>>>>");
-		scanf("%s", query);
-		if (TestAndTolower(query) == 0) {
-			printf("Invalid input");
-			continue;
-		}
-		if(!strcmp("--quit", query))
-			break;
-		QueryDict(dict, query);
-	} while (1);
-	system("cd && clear");
-	return 0;
+       printf("*****建立词典耗时 %.4f s.*****\n", 1.0 * (1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)) / 1000000);	
+       printf("*****Input --quit for quiting.*****\n");
+       do {
+       printf(">>>>>>>");
+       scanf("%s", query);
+       if (TestAndTolower(query) == 0) {
+       printf("Invalid input");
+       continue;
+       }
+       if(!strcmp("--quit", query))
+       break;
+       QueryDict(dict, query);
+       } while (1);
+       system("cd && clear");
+#else
+       TernNode *dict;
+
+       struct timeval start, end;
+       gettimeofday(&start, NULL);
+       dict = createDict();
+       gettimeofday(&end, NULL);
+
+       printf("\033[1;34;40m");
+
+       printf("******createDict successfully*****\n");
+       printf("*****建立词典耗时 %.4f s.*****\n", 1.0 * (1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)) / 1000000);	
+       printf("*****Input --quit for quiting.*****\n");
+       do {
+       printf("\033[1;34;40m");
+           printf(">>>>>>>");
+           printf("\033[1;32;40m");
+           scanf("%s", query);
+           if (TestAndTolower(query) == 0) {
+               printf("Invalid input");
+               continue;
+           }
+           if(!strcmp("--quit", query))
+               break;
+           TernNode *node = queryDict(dict, query);
+           printf("\033[1;31;40m");
+           if(node && node->data){
+               printf("%s\n", node->data);
+           } else {
+               printf("\n");
+           }
+       } while (1);
+       printf("\033[0m");
+       system("cd && clear");
+#endif
+
+       return 0;
 }
